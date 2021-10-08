@@ -8,8 +8,10 @@ import random
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+import threading
 
-combos = ['daratmp+hxwva@gmail.com', 'whentmp+jnfm6@gmail.com', 'joneltmp+c21jr@gmail.com', 'sisatmp+du6zv@gmail.com', 'dotatmp+mzjg9@gmail.com', 'puritmp+k0mmo@gmail.com', 'ezratmp+muf6q@gmail.com']
+combos = open('combos.txt', 'r').read().split('\n')
+print(combos)
 tags = {}
 
 subject = "ポイ活の勧め。海外ポイントサイト・DropGCの紹介。"
@@ -51,7 +53,6 @@ https://dropgc.gift
 【↑此方のリンクからDropGCに登録可能です】
 """
 
-driver = webdriver.Chrome()
 
 def getTags():
     print('タグを収集中....')
@@ -60,19 +61,19 @@ def getTags():
     tags = tree.xpath('//div[@class="TagList__item"]/a/text()')
     print(tags)
     return tags
-def login():
+def login(driver):
     print('アカウントにログイン中...')
     driver.get('https://qiita.com/login')
 
     cred = random.choice(combos)
-
     WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.XPATH, '//input[@name="identity"]')))
     driver.find_element_by_xpath('//input[@name="identity"]').send_keys(cred)
     WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.XPATH, '//input[@name="password"]')))
     driver.find_element_by_xpath('//input[@name="password"]').send_keys(cred)
     WebDriverWait(driver, 100).until(EC.presence_of_element_located((By.XPATH, '//input[@name="commit"]')))
     driver.find_element_by_xpath('//input[@name="commit"]').click()
-def post (tags):
+    return
+def post (tags, driver):
     t = []
     for i in range(5):
         tag = random.choice(tags)
@@ -103,14 +104,22 @@ def post (tags):
     driver.find_element_by_xpath('//button[@class="css-lc87ok e1rb7ucl0"]').click()
     print('記事の投稿が完了しました')
 
+def main ():
+    driver = webdriver.Chrome()
+    try:
+        tags = getTags()
+        login(driver)
+    
+        while True:
+            try:
+                post(tags, driver)
+            except:
+                login(driver)
+            sleep(0.5)
+    except:
+        driver.quit()
+        main()
 
 if __name__ == '__main__':
-    tags = getTags()
-    login()
-    
-    while True:
-        try:
-            post(tags)
-        except:
-            login()
-        sleep(0.5)
+    for i in range(5):
+        threading.Thread(target=main).start()
